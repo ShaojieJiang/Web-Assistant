@@ -1,0 +1,4 @@
+gradio==3.20.1
+hydra-core==1.2.0
+openai==0.27.8
+duckduckgo-search==2.8.0
