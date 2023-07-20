@@ -3,7 +3,7 @@
 Reproducing the WebGPT[^webgpt] work using `gpt-3.5-turbo` api calls and DuckDuckGo search.
 Enables flagging for data annotation.
 
-[webgpt] [Nakano, Reiichiro, et al. "Webgpt: Browser-assisted question-answering with human feedback." arXiv preprint arXiv:2112.09332 (2021).](https://arxiv.org/abs/2112.09332)
+[^webgpt]: [Nakano, Reiichiro, et al. "Webgpt: Browser-assisted question-answering with human feedback." arXiv preprint arXiv:2112.09332 (2021).](https://arxiv.org/abs/2112.09332)
 
 Example usages:
 * Set it up for as personal web copilot, without subscribing ChatGPT Plus
