@@ -1,11 +1,21 @@
 import streamlit as st
+import logging
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
+from streamlit_chat import message
 
 from retrievers.web_research import WebRetriever as WebResearchRetriever
 
-st.set_page_config(page_title="Interweb Explorer", page_icon="🌐")
+title = "Web Assistant"
+
+st.set_page_config(page_title=title, page_icon="🌐")
+# st.sidebar.image("img/ai.png")
+st.header(f"`{title}`")
+st.info(
+    "`I am an AI that can answer questions by exploring, reading, and summarizing web pages."  # noqa: E501
+    "I can be configured to use different modes: public API or private (no data sharing).`"  # noqa: E501
+)
 
 
 def settings():
@@ -62,14 +72,6 @@ class PrintRetrievalHandler(BaseCallbackHandler):
             self.container.write(f"**Results from {source}**")
             self.container.text(doc.page_content)
 
-
-# st.sidebar.image("img/ai.png")
-st.header("`Interweb Explorer`")
-st.info(
-    "`I am an AI that can answer questions by exploring, reading, and summarizing web pages."
-    "I can be configured to use different modes: public API or private (no data sharing).`"
-)
-
 # Make retriever and llm
 if "retriever" not in st.session_state:
     st.session_state["retriever"], st.session_state["llm"] = settings()
@@ -79,20 +81,20 @@ llm = st.session_state.llm
 # User input
 question = st.text_input("`Ask a question:`")
 
-if question:
-    # Generate answer (w/ citations)
-    import logging
+with st.container():
+    if question:
+        # Generate answer (w/ citations)
+        logging.basicConfig()
+        logging.getLogger("langchain.retrievers.web_research").setLevel(logging.INFO)
 
-    logging.basicConfig()
-    logging.getLogger("langchain.retrievers.web_research").setLevel(logging.INFO)
-    qa_chain = RetrievalQAWithSourcesChain.from_chain_type(llm, retriever=web_retriever)
+        qa_chain = RetrievalQAWithSourcesChain.from_chain_type(llm, retriever=web_retriever)
 
-    # Write answer and sources
-    retrieval_streamer_cb = PrintRetrievalHandler(st.container())
-    answer = st.empty()
-    stream_handler = StreamHandler(answer, initial_text="`Answer:`\n\n")
-    result = qa_chain(
-        {"question": question}, callbacks=[retrieval_streamer_cb, stream_handler]
-    )
-    answer.info("`Answer:`\n\n" + result["answer"])
-    st.info("`Sources:`\n\n" + result["sources"])
+        # Write answer and sources
+        retrieval_streamer_cb = PrintRetrievalHandler(st.container())
+        answer = st.empty()
+        stream_handler = StreamHandler(answer, initial_text="`Answer:`\n\n")
+        result = qa_chain(
+            {"question": question}, callbacks=[retrieval_streamer_cb, stream_handler]
+        )
+        answer.info("`Answer:`\n\n" + result["answer"])
+        st.info("`Sources:`\n\n" + result["sources"])
