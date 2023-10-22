@@ -2,7 +2,7 @@
 
 Reproducing the WebGPT[^webgpt] work using `gpt-3.5-turbo` api calls and DuckDuckGo search.
 Enables votting for data annotation.
-Implemented using LangChain, Streamlit (for deployment), and Gradio (for fast prototyping).
+Implemented using LangChain and Streamlit.
 
 [^webgpt]: [Nakano, Reiichiro, et al. "Webgpt: Browser-assisted question-answering with human feedback." arXiv preprint arXiv:2112.09332 (2021).](https://arxiv.org/abs/2112.09332)
 

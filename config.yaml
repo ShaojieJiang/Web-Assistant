@@ -1,2 +1,0 @@
-openai_api_key: ${oc.env:OPENAI_API_KEY}
-share: false
