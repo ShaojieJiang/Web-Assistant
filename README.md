@@ -1,5 +1,10 @@
 # Web Assistant: An open version of WebGPT
 
+
+https://github.com/ShaojieJiang/Web-Assistant/assets/26806376/ab78fe56-2bdc-4324-bfee-d8f31512f232
+
+
+
 Reproducing the WebGPT[^webgpt] work using `gpt-3.5-turbo` api calls and DuckDuckGo search.
 Enables votting for data annotation.
 Implemented using LangChain and Streamlit.
