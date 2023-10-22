@@ -75,7 +75,8 @@ def on_btn_click():
 
 def record_feedback(*args, **kwargs):
     # TODO: Implement feedback logging
-    print("Logging...")
+    vote = args[0]
+    print(f"Response {kwargs['ind']} has the vote of {vote['score']}")
 
 
 # Main app page
@@ -117,3 +118,5 @@ for i in range(len(st.session_state.assistant)):
         on_submit=record_feedback,
         kwargs={"ind": i},
     )  # triggers re-rendering after clicking
+
+# TODO: Log conversations
