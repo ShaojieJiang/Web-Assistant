@@ -1,17 +1,40 @@
+from typing import Any
+
 import streamlit as st
+from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
-from streamlit_chat import message
 from streamlit_feedback import streamlit_feedback
 
 from retrievers.web_research import WebRetriever as WebResearchRetriever
 
 
+class StreamHandler(BaseCallbackHandler):
+    def __init__(self, container=None, initial_text=""):
+        self.text = initial_text
+        self.container = container
+
+    def on_llm_new_token(self, token: str, **kwargs) -> None:
+        self.text += token
+        # TODO: Some tokens may not appear in the final response
+        with self.container:
+            message = st.chat_message("assistant")
+            message.write(self.text)
+
+    def on_chain_start(
+        self,
+        *args,
+        **kwargs,
+    ) -> Any:
+        with self.container:
+            st.status("Running...")
+
+
 def initialize_page():
     title = "Web Assistant"
     st.set_page_config(page_title=title, page_icon="🌐")
-    st.session_state.setdefault("past", [])
-    st.session_state.setdefault("generated", [])
+    st.session_state.setdefault("user", [])
+    st.session_state.setdefault("assistant", [])
     st.sidebar.title(title)
 
 
@@ -45,36 +68,52 @@ def setup():
     return web_retriever, llm
 
 
-def on_input_change():
-    user_input = st.session_state.user_input
-    st.session_state.past.append(user_input)
-    # TODO: Uncomment the lines below when finished debugging
-    # response = qa_chain({"question": user_input})
-    # st.session_state.generated.append({'type': 'normal', 'data': response['answer']})
-    st.session_state.generated.append({"type": "normal", "data": "blah"})
-
-
 def on_btn_click():
-    del st.session_state.past[:]
-    del st.session_state.generated[:]
+    del st.session_state.user[:]
+    del st.session_state.assistant[:]
 
 
+def record_feedback(*args, **kwargs):
+    # TODO: Implement feedback logging
+    print("Logging...")
+
+
+# Main app page
 initialize_page()
-# Init retriever and llm
-web_retriever, llm = setup()
+web_retriever, llm = setup()  # Init retriever and llm
 qa_chain = RetrievalQAWithSourcesChain.from_chain_type(llm, retriever=web_retriever)
 
-for i in range(len(st.session_state["generated"])):
-    message(st.session_state["past"][i], is_user=True, key=f"{i}_user")
-    message(
-        st.session_state["generated"][i]["data"],
-        key=f"{i}",
-        allow_html=True,
-        is_table=True if st.session_state["generated"][i]["type"] == "table" else False,
-    )
-    feedback = streamlit_feedback(
-        feedback_type="thumbs", align="flex-start", key=f"{i}_feedback"
-    )
-
-st.chat_input(on_submit=on_input_change, key="user_input")
+# st.chat_input(on_submit=refresh_page, key="user_input")
+user_input = st.chat_input(key="user_input")
 st.sidebar.button("Clear message", on_click=on_btn_click)
+if user_input:
+    st.session_state.user.append(user_input)
+    st.session_state.assistant.append(
+        {"type": "normal", "data": ""}
+    )  # Create a placeholder response in the session_state
+
+for i in range(len(st.session_state.assistant)):
+    st.chat_message("user").write(st.session_state.user[i])
+    assistant_msg = st.session_state.assistant[i]["data"]
+    if assistant_msg:
+        st.chat_message("assistant").write(st.session_state.assistant[i]["data"])
+    else:  # Calls to the chain is only triggered when a placeholder is detected
+        container = st.empty()
+        with container:
+            st.chat_message("assistant").write("")
+            stream_handler = StreamHandler(container)
+            response = qa_chain(
+                {"question": user_input}, callbacks=[stream_handler]
+            )  # Update the empty container in the callback
+            st.session_state.assistant[-1] = {  # Update the placeholder response
+                "type": "normal",
+                "data": response["answer"],
+            }
+            st.chat_message("assistant").write(st.session_state.assistant[-1]["data"])
+
+    feedback = streamlit_feedback(
+        feedback_type="thumbs",
+        key=f"feedback_{i}",
+        on_submit=record_feedback,
+        kwargs={"ind": i},
+    )  # triggers re-rendering after clicking
