@@ -2,4 +2,6 @@ gradio==3.20.1
 hydra-core==1.2.0
 openai==0.27.8
 duckduckgo-search==3.8.3
-langchain==0.0.314
+langchain==0.0.320
+streamlit==1.27.2
+streamlit-feedback=0.1.2
