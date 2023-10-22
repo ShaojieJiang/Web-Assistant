@@ -1,9 +1,14 @@
 from typing import Any
 
+import faiss
 import streamlit as st
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.chat_models import ChatOpenAI
+from langchain.docstore import InMemoryDocstore
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
+from langchain.vectorstores import FAISS
 from streamlit_feedback import streamlit_feedback
 
 from retrievers.web_research import WebRetriever as WebResearchRetriever
@@ -29,6 +34,10 @@ class StreamHandler(BaseCallbackHandler):
         with self.container:
             st.status("Running...")
 
+    def on_retriever_start(self, serialized, query: str, **kwargs):
+        with self.container:
+            st.status(f"Searching query: {query}")
+
 
 def initialize_page():
     title = "Web Assistant"
@@ -40,11 +49,6 @@ def initialize_page():
 
 def setup():
     # Vectorstore
-    import faiss
-    from langchain.docstore import InMemoryDocstore
-    from langchain.embeddings.openai import OpenAIEmbeddings
-    from langchain.vectorstores import FAISS
-
     embeddings_model = OpenAIEmbeddings()
     embedding_size = 1536
     index = faiss.IndexFlatL2(embedding_size)
@@ -53,8 +57,6 @@ def setup():
     )
 
     # LLM
-    from langchain.chat_models import ChatOpenAI
-
     llm = ChatOpenAI(model_name="gpt-3.5-turbo-16k", temperature=0, streaming=True)
 
     # Search
@@ -82,7 +84,9 @@ def record_feedback(*args, **kwargs):
 # Main app page
 initialize_page()
 web_retriever, llm = setup()  # Init retriever and llm
-qa_chain = RetrievalQAWithSourcesChain.from_chain_type(llm, retriever=web_retriever)
+qa_chain = RetrievalQAWithSourcesChain.from_chain_type(
+    llm, retriever=web_retriever, return_source_documents=True
+)
 
 # st.chat_input(on_submit=refresh_page, key="user_input")
 user_input = st.chat_input(key="user_input")
@@ -104,13 +108,24 @@ for i in range(len(st.session_state.assistant)):
             st.chat_message("assistant").write("")
             stream_handler = StreamHandler(container)
             response = qa_chain(
-                {"question": user_input}, callbacks=[stream_handler]
+                {"question": user_input},
+                callbacks=[stream_handler],
             )  # Update the empty container in the callback
             st.session_state.assistant[-1] = {  # Update the placeholder response
                 "type": "normal",
                 "data": response["answer"],
+                "sources": response["sources"],
+                "docs": response["source_documents"],
             }
             st.chat_message("assistant").write(st.session_state.assistant[-1]["data"])
+        container = st.empty()
+        with container:
+            expander = container.expander("Retrieved results")
+            documents = response["source_documents"]
+            for idx, doc in enumerate(documents):
+                source = doc.metadata["source"]
+                expander.write(f"**Results from {source}**")
+                expander.text(doc.page_content)
 
     feedback = streamlit_feedback(
         feedback_type="thumbs",
