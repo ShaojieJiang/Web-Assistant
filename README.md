@@ -39,6 +39,11 @@ If you want to share the tool running on your machine, you can change `share: fa
 Then after restarting the program, you will see a temporary link hosted by Gradio that can be accessed by others.
 > _NOTE:_ Sharing this link will allow others to use the tool that costs your OpenAI credits, please be aware of that. -->
 
+## System Illustration
+
+The current system design is illustrated as follows:
+![System Design of Web Assistant](figures/Web-Assistant.svg)
+
 ## TODO's
 
 - [ ] Query rewriting in-between the latest message and response (making use of chat history)
