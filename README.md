@@ -42,7 +42,7 @@ Then after restarting the program, you will see a temporary link hosted by Gradi
 ## System Illustration
 
 The current system design is illustrated as follows:
-![System Design of Web Assistant](figures/Web-Assistant.svg)
+![System Design of Web Assistant](./figures/Web-Assistant.svg)
 
 ## TODO's
 
